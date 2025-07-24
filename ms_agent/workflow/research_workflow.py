@@ -324,12 +324,17 @@ class ResearchWorkflow:
 
         # Rewrite the user prompt
         from datetime import datetime
-        args_template: str = '{"query": "xxx", "num_results": 20, "start_published_date": "2025-01-01", "end_published_date": "2025-05-30"}'
+        args_template: str = '{"query": "xxx", "num_results": 20, "start_published_date": "2025-01-01", "end_published_date": "2025-05-30", "type": "keyword"}'
+        search_principle: str = (f'\n1.查询意图识别：如果查询中含有模糊描述、长自然语言句子、开放式问题，优先使用"neural"模式；如果查询主要内容为数字、专业术语、字段名或其它结构化信息，优先使用"keyword"模式。'
+                                 f'\n2.查询复杂度评估：简短、高频术语的查询，多使用"keyword"模式；长句、多同义词的查询，采用"neural"模式以利用向量匹配和上下文理解。'
+                                 f'\n3.不确定问题处理：如果查询意图不明确或包含多种可能性，可以使用"auto"模式。'
+                                 f'\n4.忽略因素说明：选择搜索模式时需要忽略查询中的时间范围、结果数量等表述对句子结构的影响，这些参数会在其他部分指定。')
         prompt_rewrite: str = (f'生成search request，具体要求为： '
                                f'\n1. 必须符合以下arguments格式：{args_template}'
                                f'\n2. 其中，query参数的值直接使用用户原始输入，即：{user_prompt}'
                                f'\n3. 参数需要符合搜索引擎的要求，num_results需要根据实际问题的复杂程度来估算，最大25，最小1,对于复杂的问题，num_results的值需要尽量大；'
-                               f'\n3. start_published_date和end_published_date需要根据实际问题的时间范围来估算，默认均为None。当前日期为：{datetime.now().strftime("%Y-%m-%d")}')
+                               f'\n3. start_published_date和end_published_date需要根据实际问题的时间范围来估算，默认均为None。当前日期为：{datetime.now().strftime("%Y-%m-%d")}'
+                               f'\n4. type参数表示对搜索模式的选择，可选值为"keyword"、"neural"或者"auto"，需遵守以下原则：{search_principle}')
 
         messages_rewrite = [{'role': 'user', 'content': prompt_rewrite}]
         resp_d: Dict[str, Any] = self._chat(messages=messages_rewrite,
