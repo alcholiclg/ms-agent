@@ -350,6 +350,10 @@ class ResearchWorkflow:
         if isinstance(search_request_d, list):
             search_request_d = search_request_d[0]
 
+        # Ensure the search request has the required fields
+        if search_request_d.get('type', '') not in ['keyword', 'neural', 'auto']:
+            search_request_d['type'] = 'auto'
+
         search_request: ExaSearchRequest = ExaSearchRequest(**search_request_d)
         search_res_file: str = self.search(search_requests=[search_request])
 
