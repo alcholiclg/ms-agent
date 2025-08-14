@@ -477,4 +477,20 @@ def normalize_url_or_file(url_or_file: str):
     elif url_or_file.startswith('https://arxiv.org/html/'):
         url_or_file = url_or_file.replace('arxiv.org/html', 'arxiv.org/pdf')
 
+    if url_or_file.endswith('.doc'):
+        try:
+            import subprocess
+            subprocess.run([
+                'soffice', '--headless', '--convert-to', 'docx', '--outdir',
+                os.path.dirname(url_or_file), url_or_file
+            ], check=True)  # yapf: disable
+            url_or_file = url_or_file.replace('.doc', '.docx')
+            logger.info(
+                f'Converted {url_or_file} to docx format to enable processing.'
+            )
+        except Exception as e:
+            logger.error(
+                f'Failed to convert {url_or_file} to docx format: {e}. '
+                f'Docling will not be able to process .doc file.')
+
     return url_or_file
