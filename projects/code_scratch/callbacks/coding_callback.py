@@ -73,6 +73,7 @@ The `frontend/index.js` will be used to saving. Therefore, you must generate it 
 4. Do not let your code silent crash, make the logs shown in the running terminal, later the compiling process can feedback these issues to you.
 
 5. Do not leave the images blank, you don't have any local assets(neither images nor logos), use image links from unsplash
+    * Do not generate icos or pngs, always import from unsplash
 
 6. Here is an extra instruction of making your website beautiful:
 

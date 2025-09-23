@@ -367,11 +367,11 @@ class OpenAI(LLM):
         else:
             # In platforms Bailian, setting `message.partial = True` indicates that the message
             #         is not yet complete and may be continued in the next generation step.
-            new_message.partial = True
-            messages.append(new_message)
+            if messages[-1].content != new_message.content:
+                messages.append(new_message)
+            messages[-1].partial = True
         messages[-1].api_calls += 1
 
-        messages = self._format_input_message(messages)
         return self._call_llm(messages, tools, **kwargs)
 
     def _continue_generate(self,

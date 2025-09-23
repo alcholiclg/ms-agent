@@ -47,6 +47,13 @@ MS-Agent is a lightweight framework designed to empower agents with autonomous e
 
 
 ## 🎉 News
+* 🚀Sep 22, 2025: Release MS-Agent v1.3.0, which includes the following updates:
+  - 🔥 Support [Code Scratch](projects/code_scratch/README.md)
+  - Support `Memory` for building agents with long-term and short-term memory
+  - Enhance the DeepResearch workflow
+  - Support RAY for accelerating document information extraction
+  - Support Anthropic API format for LLMs
+
 * 🚀Aug 28, 2025: Release MS-Agent v1.2.0, which includes the following updates:
   - DocResearch now supports pushing to `ModelScope`、`HuggingFace`、`GitHub` for easy sharing of research reports. Refer to [Doc Research](projects/doc_research/README.md) for more details.
   - DocResearch now supports exporting the Markdown report to `HTML`、`PDF`、`PPTX` and `DOCX` formats, refer to [Doc Research](projects/doc_research/README.md) for more details.
@@ -131,7 +138,7 @@ pip install -e .
 
 ## Quickstart
 
-### Using MCP
+### Agent chat
 This project supports interaction with models via the MCP (Model Context Protocol). Below is a complete example showing
 how to configure and run an LLMAgent with MCP support.
 
@@ -150,12 +157,12 @@ import asyncio
 
 # Configure MCP server
 mcp = {
-    "mcpServers": {
-        "fetch": {
-            "type": "sse",
-            "url": "https://{your_mcp_url}.api-inference.modelscope.net/sse"
-        }
+  "mcpServers": {
+    "fetch": {
+      "type": "streamable_http",
+      "url": "https://mcp.api-inference.modelscope.net/{your_mcp_uuid}/mcp"
     }
+  }
 }
 
 async def main():
@@ -174,6 +181,62 @@ if __name__ == '__main__':
 For example: https://modelscope.cn/mcp/servers/@modelcontextprotocol/fetch.
 Replace the url in `mcp["mcpServers"]["fetch"]` with your own MCP server endpoint.
 
+<details><summary>Memory</summary>
+
+We support memory by using [mem0](https://github.com/mem0ai/mem0) in version v1.3.0! 🎉
+
+Below is a simple example to get you started. For more comprehensive test cases, please refer to the [test_case](tests/memory/test_default_memory.py).
+
+Before running the agent, ensure that you have set your ModelScope API key for LLM.
+
+⚠️ Note: As of now, ModelScope API-Inference does not yet provide an embedding interface (coming soon). Therefore, we rely on external API providers for embeddings. By default, this implementation uses DashScope. Make sure to set your DASHSCOPE_API_KEY before running the examples.
+
+```bash
+pip install mem0ai
+export MODELSCOPE_API_KEY={your_modelscope_api_key}
+export DASHSCOPE_API_KEY={your_dashscope_api_key}
+```
+
+You can obtain or generate your API keys at:
+
+* [modelscope_api_key](https://modelscope.cn/my/myaccesstoken)
+* [dashscope_api_key](https://bailian.console.aliyun.com/?spm=5176.29619931.J__Z58Z6CX7MY__Ll8p1ZOR.1.4bf0521cWpNGPY&tab=api#/api/?type=model&url=2712195).
+
+**Example Usage**
+
+This example demonstrates how the agent remembers user preferences across sessions using persistent memory:
+
+```python
+import uuid
+import asyncio
+from omegaconf import OmegaConf
+from ms_agent.agent import LLMAgent
+
+async def main():
+    random_id = str(uuid.uuid4())
+    default_memory = OmegaConf.create({
+        'memory': [{
+            'path': f'output/{random_id}',
+            'user_id': 'awesome_me'
+        }]
+    })
+    agent1 = LLMAgent(config=default_memory)
+    agent1.config.callbacks.remove('input_callback')  # Disable interactive input for direct output
+
+    await agent1.run('I am a vegetarian and I drink coffee every morning.')
+    del agent1
+    print('========== Data preparation completed, starting test ===========')
+    agent2 = LLMAgent(config=default_memory)
+    agent2.config.callbacks.remove('input_callback')  # Disable interactive input for direct output
+
+    res = await agent2.run('Please help me plan tomorrow’s three meals.')
+    print(res)
+    assert ('vegan' in res[-1].content.lower()) and 'coffee' in res[-1].content.lower()
+
+asyncio.run(main())
+```
+
+</details>
 
 ### Agentic Insight
 
@@ -240,14 +303,48 @@ This project provides a framework for **Doc Research**, enabling agents to auton
 
 **2. Local Gradio Application**
 
-* Research Report for [Numina Math](http://faculty.bicmr.pku.edu.cn/~dongbin/Publications/numina_dataset.pdf)
+* Research Report for [UniME: Breaking the Modality Barrier: Universal Embedding Learning
+with Multimodal LLMs](https://arxiv.org/pdf/2504.17432)
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/4c1cea67-bef1-4dc1-86f1-8ad299d3b656" alt="LocalGradioApplication" width="750">
-  <p><em>Demo: Numina Math Research Report</em></p>
+  <img src="https://github.com/user-attachments/assets/3f85ba08-6366-49b7-b551-cbe50edf6218" alt="LocalGradioApplication" width="750">
+  <p><em>Demo: UniME Research Report</em></p>
 </div>
 
 
-For more details, refer to [Doc Research](projects/doc_research/README.md),
+For more details, refer to [Doc Research](projects/doc_research/README.md)
+
+<br>
+
+### Code Scratch
+
+This project provides a framework for **Code Scratch**, enabling agents to autonomously generate code projects.
+
+#### Features
+
+  - 🎯 **Complex Code Generation** - Support for complex code generation tasks, especially React frontend and Node.js backend
+  - 🔧 **Customizable Workflows** - Enable users to freely develop their own code generation workflows tailored to specific scenarios
+  - 🏗️ **Three-Phase Architecture** - Design & Coding Phase followed by Refine Phase for robust code generation and error fixing
+  - 📁 **Intelligent File Grouping** - Automatically groups related code files to minimize dependencies and reduce bugs
+  - 🔄 **Auto Compilation & Fixing** - Automatic npm compilation with intelligent error analysis and iterative fixing
+
+#### Demo
+
+**AI Workspace Homepage**
+
+Generate a complete ai workspace homepage with the following command:
+
+```shell
+PYTHONPATH=. openai_api_key=your-api-key openai_base_url=your-api-url python ms_agent/cli/cli.py run --config projects/code_scratch --query 'Build a comprehensive AI workspace homepage' --trust_remote_code true
+```
+
+The generated code will be output to the `output` folder in the current directory.
+
+**Architecture Workflow:**
+- **Design Phase**: Analyze requirements → Generate PRD & module design → Create implementation tasks
+- **Coding Phase**: Execute coding tasks in intelligent file groups → Generate complete code structure
+- **Refine Phase**: Auto-compilation → Error analysis → Iterative bug fixing → Human evaluation loop
+
+For more details, refer to [Code Scratch](projects/code_scratch/README.md).
 
 <br>
 

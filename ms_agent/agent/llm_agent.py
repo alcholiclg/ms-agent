@@ -11,6 +11,8 @@ import json
 from ms_agent.callbacks import Callback, callbacks_mapping
 from ms_agent.llm.llm import LLM
 from ms_agent.llm.utils import Message, Tool
+from ms_agent.memory import Memory, memory_mapping
+from ms_agent.memory.mem0ai import Mem0Memory
 from ms_agent.rag.base import RAG
 from ms_agent.rag.utils import rag_mapping
 from ms_agent.tools import ToolManager
@@ -20,7 +22,6 @@ from omegaconf import DictConfig, OmegaConf
 
 from ..utils.utils import read_history, save_history
 from .base import Agent
-from .memory import Memory, memory_mapping
 from .plan.base import Planer
 from .plan.utils import planer_mapping
 from .runtime import Runtime
@@ -72,6 +73,7 @@ class LLMAgent(Agent):
         self.mcp_server_file = kwargs.get('mcp_server_file', None)
         self.mcp_config: Dict[str, Any] = self._parse_mcp_servers(
             kwargs.get('mcp_config', {}))
+        self.mcp_client = kwargs.get('mcp_client', None)
         self._task_begin()
 
     def register_callback(self, callback: Callback):
@@ -187,7 +189,8 @@ class LLMAgent(Agent):
 
     async def _prepare_tools(self):
         """Initialize and connect the tool manager."""
-        self.tool_manager = ToolManager(self.config, self.mcp_config)
+        self.tool_manager = ToolManager(self.config, self.mcp_config,
+                                        self.mcp_client)
         await self.tool_manager.connect()
 
     async def _cleanup_tools(self):
@@ -229,20 +232,52 @@ class LLMAgent(Agent):
         return messages
 
     async def _prepare_memory(self):
-        """Load and initialize memory components from the config."""
+        """
+        Prepare memory
+
+        Initializes and appends memory tool instances based on the configuration provided in self.config.
+        Args:
+            self: The instance of the class containing this method. Expected to have:
+            - config: An object that may contain a memory attribute, which is a list of memory configurations.
+
+        Returns:
+        None
+
+        Raises:
+        AssertionError: If a specified memory type in the config does not exist in memory_mapping.
+        """
         if hasattr(self.config, 'memory'):
             for _memory in (self.config.memory or []):
-                assert _memory.name in memory_mapping, (
-                    f'{_memory.name} not in memory_mapping, '
+                memory_type = getattr(_memory, 'name', 'default_memory')
+                assert memory_type in memory_mapping, (
+                    f'{memory_type} not in memory_mapping, '
                     f'which supports: {list(memory_mapping.keys())}')
-                if _memory.name == 'mem0':
-                    from .memory.mem0ai import SharedMemoryManager
+
+                # Use LLM config if no special configuration is specified
+                llm_config = getattr(_memory, 'llm', None)
+                if llm_config is None:
+                    service = self.config.llm.service
+                    config_dict = {
+                        'model':
+                        self.config.llm.model,
+                        'provider':
+                        'openai',
+                        'openai_base_url':
+                        getattr(self.config.llm, f'{service}_base_url', None),
+                        'openai_api_key':
+                        getattr(self.config.llm, f'{service}_api_key', None),
+                    }
+                    llm_config_obj = OmegaConf.create(config_dict)
+                    setattr(_memory, 'llm', llm_config_obj)
+
+                if memory_type == 'mem0':
+                    from ms_agent.memory.mem0ai import SharedMemoryManager
                     shared_memory = SharedMemoryManager.get_shared_memory(
                         _memory)
                     self.memory_tools.append(shared_memory)
                 else:
                     self.memory_tools.append(
-                        memory_mapping[_memory.name](_memory))
+                        memory_mapping[memory_type](_memory))
 
     async def _prepare_planer(self):
         """Load and initialize the planer component from the config."""
@@ -464,7 +499,9 @@ class LLMAgent(Agent):
                         user_id = memory_config.user_id
                         break
             for memory_tool in self.memory_tools:
-                memory_tool._add_memories_from_conversation(messages, user_id)
+                if isinstance(memory_tool, Mem0Memory):
+                    memory_tool._add_memories_from_conversation(
+                        messages, user_id)
 
         if not self.task or self.task == 'subtask':
             return
@@ -487,8 +524,9 @@ class LLMAgent(Agent):
         if self.memory_tools:
             agent_id = self.tag
             for memory_tool in self.memory_tools:
-                memory_tool._add_memories_from_procedural(
-                    messages, 'subagent', agent_id, 'procedural_memory')
+                if isinstance(memory_tool, Mem0Memory):
+                    memory_tool._add_memories_from_procedural(
+                        messages, 'subagent', agent_id, 'procedural_memory')
         return
 
     async def _run(self, messages: Union[List[Message], str],

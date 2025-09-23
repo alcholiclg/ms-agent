@@ -3,6 +3,8 @@ import asyncio
 import os
 from contextlib import AsyncExitStack
 from datetime import timedelta
+from os import environb
+from types import TracebackType
 from typing import Any, Dict, Literal, Optional
 
 from mcp import ClientSession, ListToolsResult, StdioServerParameters
@@ -13,7 +15,7 @@ from ms_agent.config.env import Env
 from ms_agent.llm.utils import Tool
 from ms_agent.tools.base import ToolBase
 from ms_agent.utils import enhance_error, get_logger
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 
 logger = get_logger()
 
@@ -40,17 +42,23 @@ class MCPClient(ToolBase):
         mcp_config(`Optional[Dict[str, Any]]`): Extra mcp servers in json format.
     """
 
-    def __init__(self,
-                 config: DictConfig,
-                 mcp_config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        mcp_config: Optional[Dict[str, Any]] = None,
+        config: Optional[DictConfig] = None,
+    ):
         super().__init__(config)
         self.sessions: Dict[str, ClientSession] = {}
         self.exit_stack = AsyncExitStack()
-        self.mcp_config: Dict[str, Dict[
-            str, Any]] = Config.convert_mcp_servers_to_json(config)
+        self.mcp_config: Dict[str, Dict[str, Any]] = {'mcpServers': {}}
+        if config is not None:
+            config_from_file = Config.convert_mcp_servers_to_json(config)
+            self.mcp_config['mcpServers'].update(
+                config_from_file.get('mcpServers', {}))
         self._exclude_functions = {}
         if mcp_config is not None:
-            self.mcp_config.update(mcp_config)
+            self.mcp_config['mcpServers'].update(
+                mcp_config.get('mcpServers', {}))
 
     async def call_tool(self, server_name: str, tool_name: str,
                         tool_args: dict):
@@ -114,7 +122,9 @@ class MCPClient(ToolBase):
             logger.info(f'\nConnected to server "{server_name}" '
                         f'with tools: \n{sep.join(tools)}.')
 
-    async def connect_to_server(self, server_name: str, timeout: int,
+    async def connect_to_server(self,
+                                server_name: str,
+                                timeout: int = CONNECTION_TIMEOUT,
                                 **kwargs):
         logger.info(f'connect to {server_name}')
         # transport: stdio, sse, streamable_http, websocket
@@ -237,6 +247,44 @@ class MCPClient(ToolBase):
                 new_eg = enhance_error(e, f'Connect `{name}` failed, details:')
                 raise new_eg from e
 
+    async def add_mcp_config(self, mcp_config: Dict[str, Dict[str, Any]]):
+        if mcp_config is None:
+            return
+        new_mcp_config = mcp_config.get('mcpServers', {})
+        servers = self.mcp_config.setdefault('mcpServers', {})
+        envs = Env.load_env()
+        for name, server in new_mcp_config.items():
+            if name in servers and servers[name] == server:
+                continue
+            else:
+                servers[name] = server
+                env_dict = server.pop('env', {})
+                env_dict = {
+                    key: value if value else envs.get(key, '')
+                    for key, value in env_dict.items()
+                }
+                if 'exclude' in server:
+                    self._exclude_functions[name] = server.pop('exclude')
+                await self.connect_to_server(
+                    server_name=name, env=env_dict, **server)
+        self.mcp_config['mcpServers'].update(new_mcp_config)
+
     async def cleanup(self):
         """Clean up resources"""
+        await self.exit_stack.aclose()
+
+    async def __aenter__(self) -> 'MCPClient':
+        try:
+            await self.connect()
+            return self
+        except Exception:
+            await self.exit_stack.aclose()
+            raise
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         await self.exit_stack.aclose()

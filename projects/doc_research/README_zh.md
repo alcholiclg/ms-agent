@@ -41,9 +41,11 @@
 
 ### 本地运行Gradio应用
 
+- 生成以下论文的研究报告： [UniME: Breaking the Modality Barrier: Universal Embedding Learning
+with Multimodal LLMs](https://arxiv.org/pdf/2504.17432)
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/4c1cea67-bef1-4dc1-86f1-8ad299d3b656" alt="本地运行" width="750">
-  <p><em>本地运行的Gradio界面展示</em></p>
+  <img src="https://github.com/user-attachments/assets/3f85ba08-6366-49b7-b551-cbe50edf6218" alt="LocalGradioApplication" width="750">
+  <p><em>本地运行DocResearch Gradio界面展示</em></p>
 </div>
 
 
@@ -213,11 +215,11 @@ temp_workspace/user_xxx_1753706367955/
 **1. 单文档研究报告**
 
 * User Prompt: `深入分析和总结下列文档`  (默认) <br>
-* URLs Input:  `https://modelscope.cn/models/ms-agent/ms_agent_resources/resolve/master/numina_dataset.pdf` <br>
+* URLs Input:  `https://arxiv.org/pdf/2504.17432` <br>
 
 * 研究报告：
 
-<https://github.com/user-attachments/assets/d6af658c-d67d-499d-9241-bfeb43496e4a>
+<https://github.com/user-attachments/assets/706a5855-1188-4bdf-af39-5279b628571a>
 
 <br>
 
