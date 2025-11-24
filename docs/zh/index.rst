@@ -21,6 +21,7 @@ MS-Agent DOCUMENTATION
    Components/工作流.md
    Components/支持的模型.md
    Components/工具.md
+   Components/贡献者指南.md
 
 .. toctree::
    :maxdepth: 2
@@ -30,3 +31,4 @@ MS-Agent DOCUMENTATION
    Projects/深度研究.md
    Projects/代码生成.md
    Projects/金融深度研究.md
+   Projects/短视频生成.md

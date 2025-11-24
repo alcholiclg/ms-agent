@@ -17,7 +17,7 @@
     <img src='https://readthedocs.org/projects/ms-agent/badge/?version=latest' alt='Documentation Status' />
 </a>
 <a href="https://github.com/modelscope/ms-agent/actions?query=branch%3Amaster+workflow%3Acitest++"><img src="https://img.shields.io/github/actions/workflow/status/modelscope/ms-agent/citest.yaml?branch=master&logo=github&label=CI"></a>
-<a href="https://github.com/modelscope/ms-agent/blob/main/LICENSE"><img src="https://img.shields.io/github/license/modelscope/ms-agent"></a>
+<a href="https://github.com/modelscope/ms-agent/blob/main/LICENSE"><img src="https://img.shields.io/github/license/modelscope/modelscope-agent"></a>
 <a href="https://github.com/modelscope/ms-agent/pulls"><img src="https://img.shields.io/badge/PR-welcome-55EB99.svg"></a>
 <a href="https://pypi.org/project/ms-agent/"><img src="https://badge.fury.io/py/ms-agent.svg"></a>
 <a href="https://pepy.tech/project/ms-agent"><img src="https://static.pepy.tech/badge/ms-agent"></a>
@@ -26,6 +26,9 @@
 <p align="center">
 <a href="https://trendshift.io/repositories/323" target="_blank"><img src="https://trendshift.io/api/badge/repositories/323" alt="modelscope%2Fms-agent | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </p>
+
+
+[**中文**](README_ZH.md)
 
 ## Introduction
 
@@ -36,6 +39,7 @@ MS-Agent is a lightweight framework designed to empower agents with autonomous e
 - **Multi-Agent for general purpose**: Chat with agent with tool-calling capabilities based on MCP.
 - **Deep Research**: To enable advanced capabilities for autonomous exploration and complex task execution.
 - **Code Generation**: Supports code generation tasks with artifacts.
+- **Short Video Generation**：Support video generation of about 5 minutes.
 - **Agent Skills**: Implementation of [Anthropic-Agent-Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills) Protocol.
 - **Lightweight and Extensible**: Easy to extend and customize for various applications.
 
@@ -48,6 +52,8 @@ MS-Agent is a lightweight framework designed to empower agents with autonomous e
 
 
 ## 🎉 News
+
+* 🎬 Nov 13, 2025: Release Singularity Cinema, to support short video generation for complex scenarios, check [here](projects/singularity_cinema/README_EN.md)
 
 * 🚀 Nov 12, 2025: Release MS-Agent v1.5.0, which includes the following updates:
   - 🔥 We present [FinResearch](projects/fin_research/README.md), a multi-agent workflow tailored for financial research
@@ -481,6 +487,45 @@ aggregator:
 - README: [FinResearch](projects/fin_research/README.md)
 - Documentation: [MS-Agent Documentation](https://ms-agent-en.readthedocs.io/en/latest/Projects/FinResearch.html)
 
+### Singularity Cinema
+
+Singularity Cinema is an Agent-powered workflow for generating short videos, capable of producing high-quality complex short videos using either a single-sentence prompt or knowledge-based documents.
+
+#### Core Features
+
+- 🎬 **Supports Both Simple and Complex Requirements**: Can work with a single-sentence description or handle complex information files
+
+- 🎹 **Sophisticated Tables and Formulas**: Can display and interpret formulas and charts within short videos that correspond to the script
+
+- 🎮 **End-to-End**: From requirements to script to storyboard, from voiceover to charts to subtitles, and finally human feedback and video generation—the entire end-to-end process completed with a single command
+
+- 🏁 **High Configurability**: Highly configurable with easy adjustments for voice, style, and materials through simple configuration
+
+- 🚧 **Customizable**: Clear and simple workflow, suitable for secondary development
+
+#### Quick Start
+
+**Usage Example**:
+
+```bash
+OPENAI_API_KEY=xxx-xxx T2I_API_KEY=ms-xxx-xxx MANIM_TEST_API_KEY=xxx-xxx ms-agent run --config "projects/singularity_cinema" --query "Your custom topic" --load_cache true --trust_remote_code true
+```
+
+**Results**:
+
+[![Video Preview](./docs/resources/deepspeed_preview.jpg)](https://modelscope-open.oss-cn-hangzhou.aliyuncs.com/deepspeed-zero.mp4)
+
+**An introduction to Deepspeed ZeRO**
+
+[![Video Preview](./docs/resources/gdp_preview.jpg)](https://modelscope-open.oss-cn-hangzhou.aliyuncs.com/a-history-of-us-gdp.mp4)
+
+**A history of US GDP**
+
+#### References
+
+- [Complete Documentation](./docs/zh/Projects/短视频生成.md)
+
+
 <br>
 
 ### Interesting works
@@ -496,6 +541,9 @@ We are committed to continuously improving and expanding the MS-Agent framework 
 - [ ] **FinResearch** – A financial deep-research agent dedicated to in-depth analysis and research in the finance domain.
   - [x] Long-term deep financial analysis report generation
   - [ ] Near real-time event-driven report generation
+- [ ] **Singularity Cinema**
+  - [ ] Support more complex scenarios
+  - [ ] Improve stabilises
 - [ ] **Multimodal Agentic Search** – Supporting large-scale multimodal document retrieval and generation of search results combining text and images.
 - [ ] Enhanced **Agent Skills** – Providing a richer set of predefined skills and tools to expand agent capabilities and enabling multi-skill collaboration for complex task execution.
 - [ ] **Agent-Workstation** - An unified WebUI with one-click local deployment support with combining all agent capabilities of MS-Agent, such as AgentChat, MCP, AgentSkills, DeepResearch, DocResearch, CodeScratch, etc.

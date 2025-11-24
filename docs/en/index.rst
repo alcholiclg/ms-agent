@@ -21,6 +21,7 @@ MS-Agent DOCUMENTATION
    Components/Workflow.md
    Components/SupportedModels.md
    Components/Tools.md
+   Components/ContributorGuide.md
 
 .. toctree::
    :maxdepth: 2
@@ -30,3 +31,4 @@ MS-Agent DOCUMENTATION
    Projects/DeepResearch.md
    Projects/CodeScratch.md
    Projects/FinResearch.md
+   Projects/VideoGeneration.md

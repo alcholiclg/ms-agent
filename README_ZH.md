@@ -13,11 +13,11 @@
 
 <p align="center">
 <img src="https://img.shields.io/badge/python-%E2%89%A53.10-5be.svg">
-<a href='https://ms-agent-en.readthedocs.io/en/latest/'>
+<a href='https://ms-agent.readthedocs.io/zh-cn/latest/'>
     <img src='https://readthedocs.org/projects/ms-agent/badge/?version=latest' alt='Documentation Status' />
 </a>
 <a href="https://github.com/modelscope/ms-agent/actions?query=branch%3Amaster+workflow%3Acitest++"><img src="https://img.shields.io/github/actions/workflow/status/modelscope/ms-agent/citest.yaml?branch=master&logo=github&label=CI"></a>
-<a href="https://github.com/modelscope/ms-agent/blob/main/LICENSE"><img src="https://img.shields.io/github/license/modelscope/ms-agent"></a>
+<a href="https://github.com/modelscope/ms-agent/blob/main/LICENSE"><img src="https://img.shields.io/github/license/modelscope/modelscope-agent"></a>
 <a href="https://github.com/modelscope/ms-agent/pulls"><img src="https://img.shields.io/badge/PR-welcome-55EB99.svg"></a>
 <a href="https://pypi.org/project/ms-agent/"><img src="https://badge.fury.io/py/ms-agent.svg"></a>
 <a href="https://pepy.tech/project/ms-agent"><img src="https://static.pepy.tech/badge/ms-agent"></a>
@@ -27,6 +27,10 @@
 <a href="https://trendshift.io/repositories/323" target="_blank"><img src="https://trendshift.io/api/badge/repositories/323" alt="modelscope%2Fmodelscope-agent | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </p>
 
+
+[**README**](README.md)
+
+
 ## 简介
 MS-Agent是一个轻量级框架，旨在为智能体提供自主探索能力。它提供了灵活且可扩展的架构，允许开发者创建能够执行复杂任务的智能体，如代码生成、数据分析，以及基于MCP（模型调用协议）支持的通用工具调用。
 
@@ -34,7 +38,8 @@ MS-Agent是一个轻量级框架，旨在为智能体提供自主探索能力。
 
 - **通用多智能体**：基于MCP的工具调用能力与智能体聊天。
 - **深度研究**：启用自主探索和复杂任务执行的高级能力。
-- **代码生成**：支持带有工件的代码生成任务。
+- **代码生成**：支持复杂项目的代码生成任务。
+- **短视频生成**：支持5分钟左右的短视频生成。
 - **Agent Skills**：兼容Anthropic-Agent-Skills协议，实现智能体技能模块。
 - **轻量级且可扩展**：易于扩展和定制以适应各种应用。
 
@@ -45,6 +50,8 @@ MS-Agent是一个轻量级框架，旨在为智能体提供自主探索能力。
 |  <img src="asset/ms-agent.jpg" width="200" height="200">
 
 ## 🎉 新闻
+
+* 🎬 2025.11.13: 发布了“奇点放映室”，用于进行知识类文档的复杂场景短视频制作，具体查看[这里](projects/singularity_cinema/README.md)
 
 * 🚀 2025.11.12：发布MS-Agent v1.5.0，包含以下更新：
   - 🔥 新增 [**FinResearch**](projects/fin_research/README.md)，支持金融领域的深度研究和分析
@@ -477,6 +484,45 @@ aggregator:
 - README：请参考[FinResearch](projects/fin_research/README_zh.md)
 - 说明文档: 请参考[MS-Agent文档](https://ms-agent.readthedocs.io/zh-cn/latest/Projects/%E9%87%91%E8%9E%8D%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6.html)
 
+### 奇点放映室
+
+奇点放映室是一个Agent生成短视频的工作流，可以在使用一句话prompt或者知识类DOC的情况下支持高质量复杂短视频生成。
+
+#### 1) 核心特性
+
+- 🎬 **支持简单需求和复杂需求**：可以一句话描述需求，也可以提供复杂的信息文件
+
+- 🎹 **复杂精美的表格和公式**：可以在短视频内部展示和台本相应的公式和图表解读
+
+- 🎮 **端到端**：从需求到台本到分镜，从旁白音到图表到字幕，最后人工反馈和生成视频，端到端流程一个命令搞定
+
+- 🏁 **可配置性**：可配置性高，声音、风格、素材都可以通过简单配置调节
+
+- 🚧 **定制化**：工作流清晰简单，适合二次开发
+
+#### 2) 快速开始
+
+**使用示例**：
+
+
+```bash
+OPENAI_API_KEY=xxx-xxx T2I_API_KEY=ms-xxx-xxx MANIM_TEST_API_KEY=xxx-xxx ms-agent run --config "projects/singularity_cinema" --query "你的自定义主题" --load_cache true --trust_remote_code true
+```
+
+**运行结果**：
+
+[![Video Preview](./docs/resources/deepspeed_preview.jpg)](https://modelscope-open.oss-cn-hangzhou.aliyuncs.com/deepspeed-zero.mp4)
+
+**An introduction to Deepspeed ZeRO**
+
+[![Video Preview](./docs/resources/gdp_preview.jpg)](https://modelscope-open.oss-cn-hangzhou.aliyuncs.com/a-history-of-us-gdp.mp4)
+
+**A history of US GDP**
+
+#### 3) 参考文档
+
+- [完整文档](./docs/zh/Projects/短视频生成.md)
+
 <br>
 
 ### 有趣的工作
@@ -492,6 +538,9 @@ aggregator:
 - [ ] 金融深度研究智能体 **FinResearch** - 专注于金融领域的深度研究和分析。
   - [x] 长周期深度金融分析报告生成
   - [ ] 准实时事件驱动型简报生成
+- [ ] **奇点放映室**
+  - [ ] 支持更复杂的短视频场景
+  - [ ] 提升稳定度
 - [ ] 多模态检索增强生成 **Multimodal Agentic Search** - 支持大规模多模态文档检索和图文检索结果生成。
 - [ ] 增强的 **Agent Skills** - 提供更多预定义的技能和工具，提升智能体技能边界，并支持多技能协作，完成复杂任务执行。
 - [ ] 统一的WebUI **Agent-Workstation**，支持本地一键部署，集成了 MS-Agent 的所有智能体能力，如 AgentChat、MCP、AgentSkills、DeepResearch、DocResearch、CodeScratch 等。
