@@ -1,0 +1,48 @@
+name: GitHub image preflight
+
+on:
+  push:
+    branches:
+      - feat/github-image-preflight
+    paths:
+      - .github/workflows/image-preflight.yaml
+      - .github/image-preflight/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    if: github.repository == 'alcholiclg/ms-agent'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Record runner resources
+        run: |
+          mkdir -p preflight-results
+          {
+            uname -a
+            nproc
+            free -h
+            df -h /
+            docker version
+            docker buildx version
+          } | tee preflight-results/runner.txt
+      - name: Check public dependency endpoints and ACR connectivity
+        run: python3 .github/image-preflight/network_probe.py
+      - name: Build and smoke test the local image
+        if: ${{ !cancelled() }}
+        run: bash .github/image-preflight/run.sh
+      - name: Upload small diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-preflight-results
+          path: preflight-results/
+          retention-days: 7
