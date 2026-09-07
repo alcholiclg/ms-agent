@@ -1,0 +1,81 @@
+name: ACR connectivity check
+
+on:
+  push:
+    branches: [feat/github-image-preflight]
+    paths: [.github/workflows/acr-connectivity.yaml]
+
+permissions:
+  contents: read
+
+jobs:
+  network:
+    if: github.repository == 'alcholiclg/ms-agent'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 3
+    steps:
+      - name: Probe registry HTTPS endpoints without credentials
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures
+          import json
+          import socket
+          import subprocess
+          from pathlib import Path
+
+          hosts = [
+              'modelscope-registry.us-west-1.cr.aliyuncs.com',
+              'mshub-registry.cn-zhangjiakou.cr.aliyuncs.com',
+          ]
+
+          def probe(host):
+              report = {'host': host}
+              try:
+                  report['ipv4_addresses'] = sorted({
+                      item[4][0] for item in socket.getaddrinfo(
+                          host, 443, family=socket.AF_INET,
+                          type=socket.SOCK_STREAM)
+                  })
+              except OSError as exc:
+                  report['dns_error'] = str(exc)
+              result = subprocess.run([
+                  'curl', '--noproxy', '*', '--ipv4', '--silent',
+                  '--show-error', '--connect-timeout', '8', '--max-time', '15',
+                  '--output', '/dev/null', '--write-out', '%{json}',
+                  'https://' + host + '/v2/',
+              ], capture_output=True, text=True, timeout=20)
+              stats = json.loads(result.stdout) if result.stdout else {}
+              report.update({
+                  'curl_exit_code': result.returncode,
+                  'error': result.stderr.strip(),
+                  'network_reachable': result.returncode == 0
+                      and stats.get('http_code') in (200, 401),
+                  **{key: stats.get(key) for key in (
+                      'http_code', 'remote_ip', 'time_connect',
+                      'time_appconnect', 'time_total')},
+              })
+              return report
+
+          ip_result = subprocess.run([
+              'curl', '--noproxy', '*', '--ipv4', '--fail', '--silent',
+              '--show-error', '--max-time', '10', 'https://api.ipify.org',
+          ], capture_output=True, text=True, timeout=15)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+              results = list(pool.map(probe, hosts))
+          report = {
+              'runner_public_ipv4': ip_result.stdout.strip()
+                  if ip_result.returncode == 0 else None,
+              'scope': 'Network only; no registry login, push or pull performed.',
+              'registries': results,
+          }
+          rendered = json.dumps(report, indent=2) + '\n'
+          Path('acr-connectivity.json').write_text(rendered)
+          print(rendered, flush=True)
+          raise SystemExit(0 if results[0]['network_reachable'] else 1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acr-connectivity
+          path: acr-connectivity.json
+          retention-days: 7
